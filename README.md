@@ -117,7 +117,7 @@ All parametes are encryped with the default SSM key. For each parameter, the `De
             --overwrite \
             --type SecureString
 
-    **SSH key need to be uploaded via CLI or API because *AWS Console breaks the new lines in the key file*. Uploaded SSH key via UI will be not valid**
+    **The SSH key must be uploaded via CLI or API because the web UI breaks new lines, invaliditing the key.**
 
 6. Deploy by running `make deploy ENVIRONMENT=prod`
 
@@ -213,7 +213,7 @@ All parametes are encryped with the default SSM key. For each parameter, the `De
 
 * Currently only supports reading from the `master` branch.
 
-* Currently only supports SSH git endpoints
+* Currently only supports SSH git endpoints.
 
 ## TODO
 
