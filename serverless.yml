@@ -1,0 +1,80 @@
+service: git2params
+package:
+  artifact: package/app.zip
+  
+## TODO: move all this properties to the file, once it fixed in the serverless 1.21.0
+custom:
+  ####### Variables that need to be modified by the user
+  prod:
+      git_repo:
+          name: # my_git_repo
+          url:  # git@github.com:some_developer/my_git_repo.git
+      aws:
+          account_id: # 8888888888
+          region: # us-east-1
+          sns_topic: # my_sns_topic
+      dry_run: "false"
+  ######### End of modifications
+  param_prefix: /${self:custom.${opt:stage}.git_repo.name}
+  system_param_prefix: /${self:service}/${self:custom.${opt:stage}.git_repo.name}
+  sns_topic_arn: arn:aws:sns:${self:custom.${opt:stage}.aws.region}:${self:custom.${opt:stage}.aws.account_id}:${self:custom.${opt:stage}.aws.sns_topic}
+
+provider:
+  name: aws
+  runtime: python2.7
+  region: ${self:custom.${opt:stage}.aws.region}
+  memorySize: 128
+  timeout: 300
+  stage: ${opt:stage}
+  environment:
+    GIT_REPO: ${self:custom.${opt:stage}.git_repo.url}
+    REGION: ${self:custom.${opt:stage}.aws.region}
+    SYSTEM_PARAM_PREFIX: ${self:custom.system_param_prefix}
+    PARAM_PREFIX: ${self:custom.param_prefix}
+    SNS_TOPIC_ARN: ${self:custom.sns_topic_arn}
+    DRYRUN: ${self:custom.${opt:stage}.dry_run}
+  iamRoleStatements:
+  - Effect: Allow
+    Action:
+    - ssm:DescribeParameters
+    Resource: "*"
+  - Effect: Allow
+    Action:
+    - ssm:PutParameter
+    - ssm:DeleteParameters
+    Resource: "arn:aws:ssm:${self:custom.${opt:stage}.aws.region}:${self:custom.${opt:stage}.aws.account_id}:parameter${self:custom.param_prefix}/**"
+  - Effect: Allow
+    Action:
+    - ssm:GetParameter
+    Resource: "arn:aws:ssm:${self:custom.${opt:stage}.aws.region}:${self:custom.${opt:stage}.aws.account_id}:parameter${self:custom.system_param_prefix}/*"
+  - Effect: Allow
+    Action:
+    - ssm:PutParameter
+    Resource: "arn:aws:ssm:${self:custom.${opt:stage}.aws.region}:${self:custom.${opt:stage}.aws.account_id}:parameter${self:custom.system_param_prefix}/revision"
+  - Effect: "Allow"
+    Action:
+      - "sns:Publish"
+    Resource: "${self:custom.sns_topic_arn}"
+
+functions:
+  main:
+    handler: handler.lambda_handler
+    events:
+      - http:
+          path: params/update
+          method: post
+
+resources:
+  Resources:
+    MainLogGroup:
+      Properties:
+        RetentionInDays: "7"
+  Outputs:
+    EnvVariables:
+      Value: |
+        GIT_REPO=${self:custom.${opt:stage}.git_repo.url}
+        REGION=${self:custom.${opt:stage}.aws.region}
+        SYSTEM_PARAM_PREFIX=${self:custom.system_param_prefix}
+        PARAM_PREFIX=${self:custom.param_prefix}
+        SNS_TOPIC_ARN=${self:custom.sns_topic_arn}
+        DRYRUN=${self:custom.${opt:stage}.dry_run}

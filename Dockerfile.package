@@ -1,0 +1,11 @@
+FROM python:2
+
+RUN apt-get update && apt-get install -y zip
+
+COPY requirements.txt /usr/src/app/
+
+RUN pip install -t /tmp -r /usr/src/app/requirements.txt  
+
+COPY handler.py /tmp/
+
+WORKDIR /tmp

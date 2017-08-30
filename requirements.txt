@@ -1,0 +1,8 @@
+#dulwich
+# user the specific commit of dulwich, since recent is broken
+https://github.com/jelmer/dulwich/archive/553a611fd0e8528890be53763b4d87eeaada0eac.zip
+paramiko
+boto3
+botocore
+unidiff
+PyYAML
