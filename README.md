@@ -22,11 +22,11 @@ SSM Parameter Store has several nice properties for configuration storage:
 
 Before you can use git2params, you need the following installed:
 
-* [Docker](https://docs.docker.com/engine/installation/) *to build package. Code depends on the [paramiko](http://www.paramiko.org/) ssh implementation. Paramiko should be built under Linux (Lambda runs on Linux), in order to avoid issues for Windows and Mac users, we are going to build it in Ubuntu-based docker container.*
+* [Docker](https://docs.docker.com/engine/installation/) for building the package. git2params depends on the mostly-\*nix-only [paramiko](http://www.paramiko.org/) SSH library. In order to avoid issues for Windows users, we use an Ubuntu-based docker container.
 
-* [Serverless](https://serverless.com/framework/docs/providers/aws/guide/installation/) *to create CloudFormation template (Lambda function, IAM permissions, etc), and deploy Lambda Function*
+* [Serverless](https://serverless.com/framework/docs/providers/aws/guide/installation/) for creating and deploying a CloudFormation template (Lambda function, IAM permissions, etc).
 
-* [AWS CLI](https://aws.amazon.com/cli) *to upload SSH key to the SSM ParameterStore*
+* [AWS CLI](https://aws.amazon.com/cli) for uploading SSH keys to the SSM Parameter Store.
 
 ## How does it work?
 
