@@ -213,6 +213,8 @@ All parametes are encryped with the default SSM key. For each parameter, the `De
 
 * Currently only supports reading from the `master` branch.
 
+* Currently only supports SSH git endpoints
+
 ## TODO
 
 * Better SNS messages in case of errors.
