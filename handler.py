@@ -220,9 +220,10 @@ def upload_as_parameters(ssm, repo, files):
                     # AllowedPattern='string'
                 )
                 uploaded.append(update_msg)
-            except:
+            except Exception as e:
+                update_msg['Error'] = "Upload problem: {}".format(e)
                 failed.append(update_msg)
-                print("ERROR: Couldn't update param {}".format(params_file))
+                print("ERROR: Couldn't update param {}. Details: {}".format(params_file, e))
         else:
             print("Skipping param update for {}".format(params_file))
         print("Upload iteration time", time.time() - start_time)
