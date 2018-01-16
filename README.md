@@ -103,7 +103,7 @@ All parametes are encryped with the default SSM key. For each parameter, the `De
         ######### End of modifications
 
 
-    **If you don't know what you are doing, please do not modify any other value in `serverless.yml` as it can breake your deployment, IAM permissions, etc.**
+    **If you don't know what you are doing, please do not modify any other value in `serverless.yml` as it can break your deployment, IAM permissions, etc.**
 
 3. Generate an SSH key with `ssh-keygen -t rsa -b 4096 -f ~/.ssh/my_git_repo`
 
