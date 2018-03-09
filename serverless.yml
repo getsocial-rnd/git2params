@@ -2,19 +2,11 @@ service: git2params
 package:
   artifact: package/app.zip
   
-## TODO: move all this properties to the file, once it fixed in the serverless 1.21.0
 custom:
-  ####### Variables that need to be modified by the user
-  prod:
-      git_repo:
-          name: # my_git_repo
-          url:  # git@github.com:some_developer/my_git_repo.git
-      aws:
-          account_id: # 8888888888
-          region: # us-east-1
-          sns_topic: # my_sns_topic
-      dry_run: "false"
-  ######### End of modifications
+  ####### Stages declaraion
+  prod: ${file(./prod-config.yml)
+  testing: ${file(./testing-config.yml)}
+  ######### End of stages declaraion
   param_prefix: /${self:custom.${opt:stage}.git_repo.name}
   system_param_prefix: /${self:service}/${self:custom.${opt:stage}.git_repo.name}
   sns_topic_arn: arn:aws:sns:${self:custom.${opt:stage}.aws.region}:${self:custom.${opt:stage}.aws.account_id}:${self:custom.${opt:stage}.aws.sns_topic}
@@ -25,6 +17,7 @@ provider:
   region: ${self:custom.${opt:stage}.aws.region}
   memorySize: 128
   timeout: 300
+  logRetentionInDays: ${self:custom.${opt:stage}.log_retention_days}
   stage: ${opt:stage}
   environment:
     GIT_REPO: ${self:custom.${opt:stage}.git_repo.url}

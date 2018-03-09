@@ -64,52 +64,22 @@ All parametes are encryped with the default SSM key. For each parameter, the `De
 
 1. Clone this repository
 
-2. Set your configurations under the `custom.<environment>` key in `serverless.yml`:
+1. Create your configurations file based on `parameters_example.yml`
 
-        ####### Variables that need to be modified by the user
-        prod:
-            git_repo:
-                name: # my_git_repo
-                url:  # git@github.com:some_developer/my_git_repo.git
-            aws:
-                account_id: # 8888888888
-                region: # us-east-1
-                sns_topic: # my_sns_topic
-            dry_run: "false"
-        ######### End of modifications
+1. Define environments in the `serverless.yml` file by adding custom keys like
 
+        prod: ${file(./prod-config.yml)
+        testing: ${file(./testing-config.yml)}
 
-    Multiple environments are supported. For example:
-    
-        ####### Variables that need to be modified by the user
-        prod:
-            git_repo:
-                name: # my_git_repo
-                url:  # git@github.com:some_developer/my_git_repo.git
-            aws:
-                account_id: # 8888888888
-                region: # us-east-1
-                sns_topic: # my_sns_topic
-            dry_run: "false"
-        testing:
-            git_repo:
-                name: # my_git_repo
-                url:  # git@github.com:some_developer/my_git_repo.git
-            aws:
-                account_id: # 8888888888
-                region: # us-east-1
-                sns_topic: # my_sns_topic
-            dry_run: "false"
-        ######### End of modifications
-
+   specifing the path to config that you created in previous step
 
     **If you don't know what you are doing, please do not modify any other value in `serverless.yml` as it can break your deployment, IAM permissions, etc.**
 
-3. Generate an SSH key with `ssh-keygen -t rsa -b 4096 -f ~/.ssh/my_git_repo`
+1. Generate an SSH key with `ssh-keygen -t rsa -b 4096 -f ~/.ssh/my_git_repo`
 
-4. Add the generated **public** key to your git repository as a read-only Deployment key. See [how to add deployment key](https://support.deployhq.com/articles/repositories) for Bitbucket/Github/Gitlab.
+1. Add the generated **public** key to your git repository as a read-only Deployment key. See [how to add deployment key](https://support.deployhq.com/articles/repositories) for Bitbucket/Github/Gitlab.
 
-5. Upload the generated **private** key to the EC2 Parameters:
+1. Upload the generated **private** key to the EC2 Parameters:
 
         aws ssm put-parameter \
             --name /git2params/repo_name/ssh-key \
@@ -119,35 +89,18 @@ All parametes are encryped with the default SSM key. For each parameter, the `De
 
     **The SSH key must be uploaded via CLI or API because the web UI breaks new lines, invaliditing the key.**
 
-6. Deploy by running `make deploy ENVIRONMENT=prod`
+1. Deploy by running `make deploy ENVIRONMENT=prod`, where `ENVIRONMENT` should match the keys defined in Step 3
 
-7. If the deployment is successful, you'll see an API Gateway endpoint in the response:
+1. If the deployment is successful, you'll see an API Gateway endpoint in the response:
 
         endpoints:
             POST - https://xxxxxxxx.execute-api.<region>.amazonaws.com/<environment>/params/update
 
-8. Copy the endpoint and configure the webhook on your git repository (Webhook configurations for [GitHub](https://developer.github.com/webhooks/creating/), [BitBucket](https://confluence.atlassian.com/bitbucket/manage-webhooks-735643732.html#Managewebhooks-create_webhook) and [GitLab](https://docs.gitlab.com/ce/user/project/integrations/webhooks.html)).
+1. Copy the endpoint and configure the webhook on your git repository (Webhook configurations for [GitHub](https://developer.github.com/webhooks/creating/), [BitBucket](https://confluence.atlassian.com/bitbucket/manage-webhooks-735643732.html#Managewebhooks-create_webhook) and [GitLab](https://docs.gitlab.com/ce/user/project/integrations/webhooks.html)).
 
 **WARNING**: During first run if your git repository contains a lot of files (or you added many files in one push), function execution can fail with a timeout, without processing all the files. Therefore, it's recommended to execute first run locally with `make local ENVIRONMENT=prod` (IAM user with all the needed permissions required).
 
 ## SNS Notifications
-
-* Currently there is no simple switch to disable SNS Notifications, so if you don't want to receive them you need to remove the following from `serverless.yml`:
-
-    * `custom.<env>.aws.sns_topic`
-
-    * `custom.sns_topic_arn`
-
-    * `provider.environment.SNS_TOPIC_ARN`
-
-    * IAM permissions for SNS topic:
-
-```yml
-- Effect: "Allow"
-    Action:
-    - "sns:Publish"
-    Resource: "${self:custom.sns_topic_arn}"
-```
 
 * Each execution will send a message to the configured `SNS_TOPIC`
 
@@ -159,18 +112,24 @@ All parametes are encryped with the default SSM key. For each parameter, the `De
        "errors":[
           {
              "Commit":"9561d3a405c372eec509d15ad52d9cd77b9c3119",
+             "CommitURL":"https://bitbucket.org/user/my-configs/commits/9561d3a405c372eec509d15ad52d9cd77b9c3119",
              "Error":"YAML format problem: mapping values are not allowed here\n in \"<string>\", line 1, column 5:\n c: x: f:\n ^",
              "Time":"Fri Aug 25 14:04:06 2017",
              "Key":"/my-configs/test.yml",
-             "Author":"user <user@example.com>"
+             "KeyURL":"https://console.aws.amazon.com/ec2/v2/home?region=us-east-1#Parameters:Name=[Equals]/my-configs/test.yml",
+             "Author":"user <user@example.com>",
+             "Message":"commit message"
           }
        ],
        "success":[
           {
              "Commit":"e9cd55dad2c5c0d77233b9c58e61fb6126949bcb",
+             "CommitURL":"https://bitbucket.org/user/my-configs/commits/e9cd55dad2c5c0d77233b9c58e61fb6126949bcb",
              "Time":"Fri Aug 11 13:21:10 2017",
              "Key":"/my-configs/test",
-             "Author":"user <user@example.com>"
+             "KeyURL":"https://console.aws.amazon.com/ec2/v2/home?region=us-east-1#Parameters:Name=[Equals]/my-configs/test",
+             "Author":"user <user@example.com>",
+             "Message":"commit message"
           }
        ]
     },
@@ -178,18 +137,24 @@ All parametes are encryped with the default SSM key. For each parameter, the `De
        "errors":[
           {
              "Commit":"ccf5d88ef6eb5940cd1d62f2e96b7b69e82354de",
+             "CommitURL":"https://bitbucket.org/user/my-configs/commits/ccf5d88ef6eb5940cd1d62f2e96b7b69e82354de",
              "Error":"JSON format problem: Expecting , delimiter: line 3 column 2 (char 16)",
              "Time":"Fri Aug 25 14:00:32 2017",
              "Key":"/my-configs/test.json",
-             "Author":"user <user@example.com>"
+             "KeyURL":"https://console.aws.amazon.com/ec2/v2/home?region=us-east-1#Parameters:Name=[Equals]/my-configs/test.json",
+             "Author":"user <user@example.com>",
+             "Message":"commit message"
           }
        ],
        "success":[
           {
              "Commit":"e9cd55dad2c5c0d77233b9c58e61fb6126949bcb",
+             "CommitURL":"https://bitbucket.org/user/my-configs/commits/e9cd55dad2c5c0d77233b9c58e61fb6126949bcb",
              "Time":"Fri Aug 11 13:21:10 2017",
-             "Key":"/my-configs/test",
-             "Author":"user <user@example.com>"
+             "Key":"/my-configs/test_new",
+             "KeyURL":"https://console.aws.amazon.com/ec2/v2/home?region=us-east-1#Parameters:Name=[Equals]/my-configs/test_new",
+             "Author":"user <user@example.com>",
+             "Message":"commit message"
           }
        ]
     },
@@ -207,6 +172,23 @@ All parametes are encryped with the default SSM key. For each parameter, the `De
  }
 ```
 
+* Currently there is no simple switch to disable SNS Notifications, so if you don't want to receive them you need to remove the following from `serverless.yml`:
+
+  * `custom.<env>.aws.sns_topic`
+
+  * `custom.sns_topic_arn`
+
+  * `provider.environment.SNS_TOPIC_ARN`
+
+  * IAM permissions for SNS topic:
+
+        ```yml
+        - Effect: "Allow"
+            Action:
+            - "sns:Publish"
+            Resource: "${self:custom.sns_topic_arn}"
+        ```
+
 ## Known Limitations
 
 * SSM Parameter Store has a maximum "path depth" of 5. So your keys can be named `/1/2/3/4/5/key`, but not `/1/2/3/4/5/6/key`.
@@ -218,7 +200,5 @@ All parametes are encryped with the default SSM key. For each parameter, the `De
 ## TODO
 
 * Better SNS messages in case of errors.
-
-* Put configurations in a separate file, once [Serverless Issue #3882](https://github.com/serverless/serverless/issues/3882) fixed.
 
 * Reading files from non-master branches.

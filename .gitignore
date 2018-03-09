@@ -1,0 +1,8 @@
+.serverless
+package
+id_rsa*
+creds_env
+handler.pyc
+.vscode
+.DS_Store
+/*config.yml

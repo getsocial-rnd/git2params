@@ -6,6 +6,8 @@ import yaml
 import boto3
 import dulwich
 import shutil
+import giturlparse
+
 from cStringIO import StringIO
 from unidiff import PatchSet
 from dulwich import porcelain 
@@ -21,6 +23,9 @@ PARAM_PREFIX = None
 SNS_TOPIC_ARN = None
 PATH_TO_REPO = "/tmp/repo"
 
+## used to consturct URL for a git commit
+GIT_COMMIT_URL = None
+
 def initialize():
     global REGION
     global DRYRUN
@@ -29,6 +34,7 @@ def initialize():
     global SYSTEM_PARAM_PREFIX
     global PARAM_PREFIX
     global SNS_TOPIC_ARN
+    global GIT_COMMIT_URL 
 
     PARAM_PREFIX = os.environ.get("PARAM_PREFIX")
     SNS_TOPIC_ARN = os.environ.get("SNS_TOPIC_ARN", None)
@@ -42,6 +48,13 @@ def initialize():
         DRYRUN = False
     else:
         DRYRUN = True
+
+    git_url = giturlparse.parse(GIT_REPO)
+
+    if git_url.resource == 'github.com' or git_url.resource == 'gitlab.com':
+       GIT_COMMIT_URL = "https://{}/{}/{}/commit".format(git_url.resource, git_url.owner, git_url.name)
+    elif git_url.resource == 'bitbucket.org':
+       GIT_COMMIT_URL = "https://{}/{}/{}/commits".format(git_url.resource, git_url.owner, git_url.name)
 
     ## cleanup repo if it exist by some reason
     shutil.rmtree(PATH_TO_REPO, ignore_errors=True)
@@ -195,7 +208,12 @@ def upload_as_parameters(ssm, repo, files):
 
         # Update param only if its Description differs from latest commit
         if not DRYRUN:
-            update_msg = {"Key":params_file, "Commit":c.id, "Author":c.author, "Time":time.ctime(c.author_time)}
+            update_msg = {"Key":params_file, "Commit":c.id, "Author":c.author, "Time":time.ctime(c.author_time), "Message": c.message}
+
+            update_msg["KeyURL"] = "https://console.aws.amazon.com/ec2/v2/home?region={}#Parameters:Name=[Equals]{}".format(REGION, params_file)
+
+            if GIT_COMMIT_URL is not None:
+                update_msg["CommitURL"] = "/".join([GIT_COMMIT_URL, c.id])
 
             # reading content of the file
             with open(os.path.join(repo.path,f), 'r') as myfile:
@@ -236,20 +254,27 @@ def delete_parameters(ssm, files):
     if len(files) == 0:
         return None, None
 
+    deleted_params = []
+    invaild_params = []
+
     # getting filename from PatchFile object and converting
     # to the array with ec2 params names PREFIX/file
     params_files = [os.path.join(PARAM_PREFIX, f) for f in files]
      
     if not DRYRUN:
         try: 
-            response = ssm.delete_parameters(
-                Names=params_files
-            )
+            # deleting params by 10 in one go, because of API limitation
+            for params_files_chunk in chunks(params_files, 10):
+                response = ssm.delete_parameters(
+                    Names=params_files_chunk
+                )
+                deleted_params.append(response['DeletedParameters'])
+                invaild_params.append(response['InvalidParameters'])
         except Exception as e :
             print("ERROR: deleting params: {}".format(e))
         
         print("Deleting params: {}".format(params_files))
-        return response['DeletedParameters'], response['InvalidParameters']
+        return deleted_params, invaild_params
     else:
         print("Skipping deletion for params: {}".format(params_files))
 
@@ -381,3 +406,8 @@ def lambda_handler(event, context):
 
 if __name__ == '__main__':
     lambda_handler(None, None)
+
+def chunks(l, n):
+    """Yield successive n-sized chunks from l."""
+    for i in range(0, len(l), n):
+        yield l[i:i + n]
