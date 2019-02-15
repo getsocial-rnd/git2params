@@ -68,8 +68,10 @@ All parametes are encryped with the default SSM key. For each parameter, the `De
 
 1. Define environments in the `serverless.yml` file by adding custom keys like
 
-        prod: ${file(./prod-config.yml)
-        testing: ${file(./testing-config.yml)}
+    ```yml
+    prod: ${file(./prod-config.yml)
+    testing: ${file(./testing-config.yml)}
+    ```
 
    specifing the path to config that you created in previous step
 
@@ -81,11 +83,13 @@ All parametes are encryped with the default SSM key. For each parameter, the `De
 
 1. Upload the generated **private** key to the EC2 Parameters:
 
-        aws ssm put-parameter \
-            --name /git2params/repo_name/ssh-key \
-            --value "$(cat ~/.ssh/my_git_repo)" \
-            --overwrite \
-            --type SecureString
+    ```sh
+    aws ssm put-parameter \
+        --name /git2params/repo_name/ssh-key \
+        --value "$(cat ~/.ssh/my_git_repo)" \
+        --overwrite \
+        --type SecureString
+    ```
 
     **The SSH key must be uploaded via CLI or API because the web UI breaks new lines, invaliditing the key.**
 
@@ -93,8 +97,10 @@ All parametes are encryped with the default SSM key. For each parameter, the `De
 
 1. If the deployment is successful, you'll see an API Gateway endpoint in the response:
 
-        endpoints:
-            POST - https://xxxxxxxx.execute-api.<region>.amazonaws.com/<environment>/params/update
+    ```
+    endpoints:
+        POST - https://xxxxxxxx.execute-api.<region>.amazonaws.com/<environment>/params/update
+    ```
 
 1. Copy the endpoint and configure the webhook on your git repository (Webhook configurations for [GitHub](https://developer.github.com/webhooks/creating/), [BitBucket](https://confluence.atlassian.com/bitbucket/manage-webhooks-735643732.html#Managewebhooks-create_webhook) and [GitLab](https://docs.gitlab.com/ce/user/project/integrations/webhooks.html)).
 
@@ -108,68 +114,68 @@ All parametes are encryped with the default SSM key. For each parameter, the `De
 
 ```json
 {
-    "added":{
-       "errors":[
-          {
-             "Commit":"9561d3a405c372eec509d15ad52d9cd77b9c3119",
-             "CommitURL":"https://bitbucket.org/user/my-configs/commits/9561d3a405c372eec509d15ad52d9cd77b9c3119",
-             "Error":"YAML format problem: mapping values are not allowed here\n in \"<string>\", line 1, column 5:\n c: x: f:\n ^",
-             "Time":"Fri Aug 25 14:04:06 2017",
-             "Key":"/my-configs/test.yml",
-             "KeyURL":"https://console.aws.amazon.com/ec2/v2/home?region=us-east-1#Parameters:Name=[Equals]/my-configs/test.yml",
-             "Author":"user <user@example.com>",
-             "Message":"commit message"
-          }
-       ],
-       "success":[
-          {
-             "Commit":"e9cd55dad2c5c0d77233b9c58e61fb6126949bcb",
-             "CommitURL":"https://bitbucket.org/user/my-configs/commits/e9cd55dad2c5c0d77233b9c58e61fb6126949bcb",
-             "Time":"Fri Aug 11 13:21:10 2017",
-             "Key":"/my-configs/test",
-             "KeyURL":"https://console.aws.amazon.com/ec2/v2/home?region=us-east-1#Parameters:Name=[Equals]/my-configs/test",
-             "Author":"user <user@example.com>",
-             "Message":"commit message"
-          }
-       ]
+    "added": {
+        "errors": [
+            {
+                "Commit": "9561d3a405c372eec509d15ad52d9cd77b9c3119",
+                "CommitURL": "https://bitbucket.org/user/my-configs/commits/9561d3a405c372eec509d15ad52d9cd77b9c3119",
+                "Error": "YAML format problem: mapping values are not allowed here\n in \"<string>\", line 1, column 5:\n c: x: f:\n ^",
+                "Time": "Fri Aug 25 14:04:06 2017",
+                "Key": "/my-configs/test.yml",
+                "KeyURL": "https://console.aws.amazon.com/ec2/v2/home?region=us-east-1#Parameters:Name=[Equals]/my-configs/test.yml",
+                "Author": "user <user@example.com>",
+                "Message": "commit message"
+            }
+        ],
+        "success": [
+            {
+                "Commit": "e9cd55dad2c5c0d77233b9c58e61fb6126949bcb",
+                "CommitURL": "https://bitbucket.org/user/my-configs/commits/e9cd55dad2c5c0d77233b9c58e61fb6126949bcb",
+                "Time": "Fri Aug 11 13:21:10 2017",
+                "Key": "/my-configs/test",
+                "KeyURL": "https://console.aws.amazon.com/ec2/v2/home?region=us-east-1#Parameters:Name=[Equals]/my-configs/test",
+                "Author": "user <user@example.com>",
+                "Message": "commit message"
+            }
+        ]
     },
-    "modified":{
-       "errors":[
-          {
-             "Commit":"ccf5d88ef6eb5940cd1d62f2e96b7b69e82354de",
-             "CommitURL":"https://bitbucket.org/user/my-configs/commits/ccf5d88ef6eb5940cd1d62f2e96b7b69e82354de",
-             "Error":"JSON format problem: Expecting , delimiter: line 3 column 2 (char 16)",
-             "Time":"Fri Aug 25 14:00:32 2017",
-             "Key":"/my-configs/test.json",
-             "KeyURL":"https://console.aws.amazon.com/ec2/v2/home?region=us-east-1#Parameters:Name=[Equals]/my-configs/test.json",
-             "Author":"user <user@example.com>",
-             "Message":"commit message"
-          }
-       ],
-       "success":[
-          {
-             "Commit":"e9cd55dad2c5c0d77233b9c58e61fb6126949bcb",
-             "CommitURL":"https://bitbucket.org/user/my-configs/commits/e9cd55dad2c5c0d77233b9c58e61fb6126949bcb",
-             "Time":"Fri Aug 11 13:21:10 2017",
-             "Key":"/my-configs/test_new",
-             "KeyURL":"https://console.aws.amazon.com/ec2/v2/home?region=us-east-1#Parameters:Name=[Equals]/my-configs/test_new",
-             "Author":"user <user@example.com>",
-             "Message":"commit message"
-          }
-       ]
+    "modified": {
+        "errors": [
+            {
+                "Commit": "ccf5d88ef6eb5940cd1d62f2e96b7b69e82354de",
+                "CommitURL": "https://bitbucket.org/user/my-configs/commits/ccf5d88ef6eb5940cd1d62f2e96b7b69e82354de",
+                "Error": "JSON format problem: Expecting , delimiter: line 3 column 2 (char 16)",
+                "Time": "Fri Aug 25 14:00:32 2017",
+                "Key": "/my-configs/test.json",
+                "KeyURL": "https://console.aws.amazon.com/ec2/v2/home?region=us-east-1#Parameters:Name=[Equals]/my-configs/test.json",
+                "Author": "user <user@example.com>",
+                "Message": "commit message"
+            }
+        ],
+        "success": [
+            {
+                "Commit": "e9cd55dad2c5c0d77233b9c58e61fb6126949bcb",
+                "CommitURL": "https://bitbucket.org/user/my-configs/commits/e9cd55dad2c5c0d77233b9c58e61fb6126949bcb",
+                "Time": "Fri Aug 11 13:21:10 2017",
+                "Key": "/my-configs/test_new",
+                "KeyURL": "https://console.aws.amazon.com/ec2/v2/home?region=us-east-1#Parameters:Name=[Equals]/my-configs/test_new",
+                "Author": "user <user@example.com>",
+                "Message": "commit message"
+            }
+        ]
     },
-    "removed":{
-       "errors":[
-          "/my-configs/key1",
-          "/my-configs/key2"
-       ],
-       "success":[
-          "/my-configs/key3",
-          "/my-configs/key4"
-       ]
+    "removed": {
+        "errors": [
+            "/my-configs/key1",
+            "/my-configs/key2"
+        ],
+        "success": [
+            "/my-configs/key3",
+            "/my-configs/key4"
+        ]
     },
-    "type":"git2params"
- }
+    "type": "git2params"
+}
 ```
 
 * Currently there is no simple switch to disable SNS Notifications, so if you don't want to receive them you need to remove the following from `serverless.yml`:
@@ -182,12 +188,12 @@ All parametes are encryped with the default SSM key. For each parameter, the `De
 
   * IAM permissions for SNS topic:
 
-        ```yml
-        - Effect: "Allow"
-            Action:
-            - "sns:Publish"
-            Resource: "${self:custom.sns_topic_arn}"
-        ```
+    ```yml
+    - Effect: "Allow"
+        Action:
+        - "sns:Publish"
+        Resource: "${self:custom.sns_topic_arn}"
+    ```
 
 ## Known Limitations
 
